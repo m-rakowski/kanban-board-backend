@@ -9,9 +9,8 @@ import javax.persistence.*;
 
 @Entity
 @Data
+@Builder
 @Table(name = "tickets")
-@NoArgsConstructor
-@RequiredArgsConstructor
 public class FullTicket {
 
 

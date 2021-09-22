@@ -29,9 +29,10 @@ public class SpringBootJPAIntegrationTest {
     public void givenTicketRepository_whenTableIsEmpty_createANewTicketWithEmptyNextAndPrevious() {
 
         // given a new ticket as sent from user via the API
-        Ticket newTicket = new Ticket(
-                "this is a new ticket", "this is its content", TicketStatus.toDo);
-
+        Ticket newTicket = Ticket.builder()
+                .content("this is its content")
+                .status(TicketStatus.toDo)
+                .title("title").build();
         final FullTicket ticket = ticketService.save(newTicket);
 
         List<FullTicket> all = ticketService.findAll();
@@ -49,11 +50,15 @@ public class SpringBootJPAIntegrationTest {
     public void givenTicketRepository_whenAddingASecondTicket_createANewTicketWithEmptyNextAndNonEmptyPrevious() {
 
         // given a new ticket as sent from user via the API
-        Ticket firstTicket = new Ticket(
-                "first ticket", "this is its content", TicketStatus.toDo);
-        Ticket secondTicket = new Ticket(
-                "second ticket", "this is its content", TicketStatus.toDo);
 
+        Ticket firstTicket = Ticket.builder()
+                .content("this is its content")
+                .status(TicketStatus.toDo)
+                .title("first ticket").build();
+        Ticket secondTicket = Ticket.builder()
+                .content("this is its content")
+                .status(TicketStatus.toDo)
+                .title("second ticket").build();
         FullTicket firstSaved = ticketService.save(firstTicket);
         FullTicket secondSaved = ticketService.save(secondTicket);
 
@@ -69,14 +74,16 @@ public class SpringBootJPAIntegrationTest {
         assertEquals(secondFound.get().getId(), firstFound.get().getNextId());
         assertEquals(firstFound.get().getId(), secondFound.get().getPreviousId());
     }
+
     @Test
     @Transactional
     public void testFindLast() {
 
         // given a new ticket as sent from user via the API
-        Ticket firstTicket = new Ticket(
-                "first ticket", "this is its content", TicketStatus.toDo);
-
+        Ticket firstTicket = Ticket.builder()
+                .content("this is its content")
+                .status(TicketStatus.toDo)
+                .title("first ticket").build();
         FullTicket firstSaved = ticketService.save(firstTicket);
 
         FullTicket last = ticketService.findLast();
@@ -88,14 +95,30 @@ public class SpringBootJPAIntegrationTest {
     public void givenTicketRepository_whenSaved_thenOK() {
 
         // given a new ticket as sent from user via the API
-        Ticket newTicket = new Ticket(
-                "this is a new ticket", "this is its content", TicketStatus.toDo);
-
+        Ticket newTicket = Ticket.builder()
+                .content("this is its content")
+                .status(TicketStatus.toDo)
+                .title("first ticket").build();
         // when saving
         final FullTicket ticket = ticketService.save(newTicket);
         var found = ticketService.findById(ticket.getId());
 
         // then it is saved
         assertNotNull(found);
+    }
+
+    @Test()
+    @Transactional
+    public void givenTicketRepository_whenDeleting_thenOK() {
+//        final FullTicket ticket = ticketService.save(
+//                Ticket.builder().build("this is a new ticket",
+//                        "this is its content",
+//                        TicketStatus.toDo));
+//
+//        assertEquals(false, ticketService.findById(ticket.getId()).isEmpty());
+//
+//        ticketService.deleteById(ticket.getId());
+//
+//        assertEquals(true, ticketService.findById(ticket.getId()).isEmpty());
     }
 }

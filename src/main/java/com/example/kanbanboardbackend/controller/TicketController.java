@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.repository.TicketRepository;
+import com.example.kanbanboardbackend.services.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,8 @@ public class TicketController {
 
     @Autowired
     TicketRepository ticketRepository;
+    @Autowired
+    TicketService ticketService;
 
     @GetMapping("/tickets")
     public ResponseEntity<List<FullTicket>> getAllTickets(@RequestParam(required = false) String title) {
@@ -62,34 +65,10 @@ public class TicketController {
 
     @PostMapping("/tickets")
     public ResponseEntity<FullTicket> createTicket(@RequestBody Ticket ticket) {
+
         try {
-
-            List<FullTicket> lastFullTicket = ticketRepository.findLast();
-
-            if (lastFullTicket.size() > 1) {
-                throw new Error("There should only be one LAST element");
-            }
-
-            FullTicket toBeSaved = new FullTicket(
-                    ticket.getTitle(), ticket.getContent(), ticket.getStatus()
-            );
-            toBeSaved.setNextId("LAST");
-
-            if (lastFullTicket.size() > 0) {
-                toBeSaved.setPreviousId(lastFullTicket.get(0).getId());
-            } else {
-                toBeSaved.setPreviousId("FIRST");
-            }
-
-            FullTicket _fullTicket = ticketRepository.save(toBeSaved);
-
-            if (lastFullTicket.size() > 0) {
-                // update the ticket that used to be last
-                lastFullTicket.get(0).setNextId(_fullTicket.getId());
-                ticketRepository.save(lastFullTicket.get(0));
-            }
-            return new ResponseEntity<>(_fullTicket, HttpStatus.CREATED);
-
+            FullTicket saved = this.ticketService.save(ticket);
+            return new ResponseEntity<>(saved, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -112,26 +91,7 @@ public class TicketController {
     @DeleteMapping("/tickets/{id}")
     public ResponseEntity<HttpStatus> deleteTicket(@PathVariable("id") String id) {
         try {
-            FullTicket found = ticketRepository.getById(id);
-            ticketRepository.deleteById(id);
-
-//            if (!"LAST".equals(found.getNextId())) {
-//                FullTicket next = ticketRepository.getById(found.getNextId());
-//
-//                next.setPreviousId(found.getPreviousId());
-//                ticketRepository.save(next);
-//
-//            }
-//            if (!"FIRST".equals(found.getPreviousId())) {
-//                ticketRepository.deleteById(found.getPreviousId());
-//
-//                FullTicket previous = ticketRepository.getById(found.getPreviousId());
-//                previous.setNextId(found.getNextId());
-//                ticketRepository.save(next);
-//            }
-
-
-
+            ticketService.deleteById(id);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

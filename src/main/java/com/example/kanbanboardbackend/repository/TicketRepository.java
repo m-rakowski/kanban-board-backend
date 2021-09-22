@@ -12,9 +12,9 @@ public interface TicketRepository extends JpaRepository<FullTicket, String> {
     List<FullTicket> findByTitleContaining(String title);
 
     @Query(value = "SELECT * FROM TICKETS WHERE NEXT_ID IS NULL", nativeQuery = true)
-    List<FullTicket> findLast();
+    FullTicket findLast();
 
     @Query(value = "SELECT * FROM TICKETS WHERE PREVIOUS_ID IS NULL", nativeQuery = true)
-    List<FullTicket> findFirst();
+    FullTicket findFirst();
 
 }
