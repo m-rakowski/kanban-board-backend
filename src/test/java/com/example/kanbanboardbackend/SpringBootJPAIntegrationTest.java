@@ -12,7 +12,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -26,7 +25,7 @@ public class SpringBootJPAIntegrationTest {
 
     @Test
     @Transactional
-    public void givenTicketRepository_whenTableIsEmpty_createANewTicketWithEmptyNextAndPrevious() {
+    public void givenTicketRepository_whenTableIsEmpty_createANewTicketWithEmptyNextAndPrevious() throws Exception {
 
         // given a new ticket as sent from user via the API
         Ticket newTicket = Ticket.builder()
@@ -39,15 +38,15 @@ public class SpringBootJPAIntegrationTest {
 
 
         // when saving
-        Optional<FullTicket> found = ticketService.findById(ticket.getId());
+        FullTicket found = ticketService.findById(ticket.getId());
 
-        assertEquals(found.get().getNextId(), null);
-        assertEquals(found.get().getPreviousId(), null);
+        assertEquals(found.getNextId(), null);
+        assertEquals(found.getPreviousId(), null);
     }
 
     @Test
     @Transactional
-    public void givenTicketRepository_whenAddingASecondTicket_createANewTicketWithEmptyNextAndNonEmptyPrevious() {
+    public void givenTicketRepository_whenAddingASecondTicket_createANewTicketWithEmptyNextAndNonEmptyPrevious() throws Exception {
 
         // given a new ticket as sent from user via the API
 
@@ -62,22 +61,22 @@ public class SpringBootJPAIntegrationTest {
         FullTicket firstSaved = ticketService.save(firstTicket);
         FullTicket secondSaved = ticketService.save(secondTicket);
 
-        Optional<FullTicket> firstFound = ticketService.findById(firstSaved.getId());
-        Optional<FullTicket> secondFound = ticketService.findById(secondSaved.getId());
+        FullTicket firstFound = ticketService.findById(firstSaved.getId());
+        FullTicket secondFound = ticketService.findById(secondSaved.getId());
 
         assertNotNull(firstFound);
         assertNotNull(secondFound);
 
-        assertEquals(null, firstFound.get().getPreviousId());
-        assertEquals(null, secondFound.get().getNextId());
+        assertEquals(null, firstFound.getPreviousId());
+        assertEquals(null, secondFound.getNextId());
 
-        assertEquals(secondFound.get().getId(), firstFound.get().getNextId());
-        assertEquals(firstFound.get().getId(), secondFound.get().getPreviousId());
+        assertEquals(secondFound.getId(), firstFound.getNextId());
+        assertEquals(firstFound.getId(), secondFound.getPreviousId());
     }
 
     @Test
     @Transactional
-    public void testFindLast() {
+    public void testFindLast() throws Exception {
 
         // given a new ticket as sent from user via the API
         Ticket firstTicket = Ticket.builder()
@@ -92,7 +91,7 @@ public class SpringBootJPAIntegrationTest {
 
     @Test()
     @Transactional
-    public void givenTicketRepository_whenSaved_thenOK() {
+    public void givenTicketRepository_whenSaved_thenOK() throws Exception {
 
         // given a new ticket as sent from user via the API
         Ticket newTicket = Ticket.builder()
@@ -109,7 +108,7 @@ public class SpringBootJPAIntegrationTest {
 
     @Test()
     @Transactional
-    public void givenTicketRepository_whenDeleting_thenOK() {
+    public void givenTicketRepository_whenDeleting_thenOK() throws Exception {
 //        final FullTicket ticket = ticketService.save(
 //                Ticket.builder().build("this is a new ticket",
 //                        "this is its content",

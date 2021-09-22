@@ -1,5 +1,6 @@
 package com.example.kanbanboardbackend.services;
 
+import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.repository.TicketRepository;
@@ -37,8 +38,15 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public Optional<FullTicket> findById(String id) {
-        return ticketRepository.findById(id);
+    public FullTicket findById(String id) throws TicketNotFoundException {
+        Optional<FullTicket> foundById = ticketRepository.findById(id);
+
+        if (!foundById.isPresent()) {
+            throw new TicketNotFoundException("Ticket Not Available");
+        }
+
+        return foundById.get();
+
     }
 
     @Override
@@ -73,18 +81,17 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public void deleteById(String id) {
+    public void deleteById(String id) throws TicketNotFoundException {
 
-        Optional<FullTicket> byId = this.findById(id);
+        FullTicket byId = this.findById(id);
 
-        if (byId.isPresent()) {
 
-            if (byId.get().getPreviousId() != null) {
-                Optional<FullTicket> previous = this.findById(byId.get().getPreviousId());
-                Optional<FullTicket> next = this.findById(byId.get().getNextId());
+        if (byId.getPreviousId() != null) {
+            FullTicket previous = this.findById(byId.getPreviousId());
+            FullTicket next = this.findById(byId.getNextId());
 //                previous.get().setNextId();
-            }
         }
+
         this.ticketRepository.deleteById(id);
     }
 

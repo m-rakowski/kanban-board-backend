@@ -1,5 +1,6 @@
 package com.example.kanbanboardbackend.services;
 
+import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.Ticket;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,7 +12,7 @@ public interface TicketService {
     @Transactional
     FullTicket save(Ticket ticket);
 
-    Optional<FullTicket> findById(String id);
+    FullTicket findById(String id) throws TicketNotFoundException;
 
     FullTicket findLast();
 
@@ -19,7 +20,7 @@ public interface TicketService {
 
     List<FullTicket> findAll();
 
-    void deleteById(String id);
+    void deleteById(String id) throws TicketNotFoundException;
 
     List<FullTicket> findByTitleContaining(String title);
 }
