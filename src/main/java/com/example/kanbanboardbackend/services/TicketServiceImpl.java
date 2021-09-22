@@ -87,4 +87,9 @@ public class TicketServiceImpl implements TicketService {
         }
         this.ticketRepository.deleteById(id);
     }
+
+    @Override
+    public List<FullTicket> findByTitleContaining(String title) {
+        return ticketRepository.findByTitleContaining(title);
+    }
 }

@@ -28,8 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class TicketController {
 
     @Autowired
-    TicketRepository ticketRepository;
-    @Autowired
     TicketService ticketService;
 
     @GetMapping("/tickets")
@@ -38,9 +36,9 @@ public class TicketController {
             List<FullTicket> fullTickets = new ArrayList<FullTicket>();
 
             if (title == null)
-                ticketRepository.findAll().forEach(fullTickets::add);
+                ticketService.findAll().forEach(fullTickets::add);
             else
-                ticketRepository.findByTitleContaining(title).forEach(fullTickets::add);
+                ticketService.findByTitleContaining(title).forEach(fullTickets::add);
 
             if (fullTickets.isEmpty()) {
                 return new ResponseEntity<>(HttpStatus.NO_CONTENT);
@@ -54,7 +52,7 @@ public class TicketController {
 
     @GetMapping("/tickets/{id}")
     public ResponseEntity<FullTicket> getTicketById(@PathVariable("id") String id) {
-        Optional<FullTicket> ticketData = ticketRepository.findById(id);
+        Optional<FullTicket> ticketData = ticketService.findById(id);
 
         if (ticketData.isPresent()) {
             return new ResponseEntity<>(ticketData.get(), HttpStatus.OK);
@@ -74,40 +72,40 @@ public class TicketController {
         }
     }
 
-    @PutMapping("/tickets/{id}")
-    public ResponseEntity<FullTicket> updateTicket(@PathVariable("id") String id, @RequestBody FullTicket fullTicket) {
-        Optional<FullTicket> ticketData = ticketRepository.findById(id);
-
-        if (ticketData.isPresent()) {
-            FullTicket _fullTicket = ticketData.get();
-            _fullTicket.setTitle(fullTicket.getTitle());
-            _fullTicket.setContent(fullTicket.getContent());
-            return new ResponseEntity<>(ticketRepository.save(_fullTicket), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-    }
-
-    @DeleteMapping("/tickets/{id}")
-    public ResponseEntity<HttpStatus> deleteTicket(@PathVariable("id") String id) {
-        try {
-            ticketService.deleteById(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @DeleteMapping("/tickets")
-    public ResponseEntity<HttpStatus> deleteAllTickets() {
-        try {
-            ticketRepository.deleteAll();
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-
-    }
+//    @PutMapping("/tickets/{id}")
+//    public ResponseEntity<FullTicket> updateTicket(@PathVariable("id") String id, @RequestBody FullTicket fullTicket) {
+//        Optional<FullTicket> ticketData = ticketService.findById(id);
+//
+//        if (ticketData.isPresent()) {
+//            FullTicket _fullTicket = ticketData.get();
+//            _fullTicket.setTitle(fullTicket.getTitle());
+//            _fullTicket.setContent(fullTicket.getContent());
+//            return new ResponseEntity<>(ticketService.save(_fullTicket), HttpStatus.OK);
+//        } else {
+//            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+//        }
+//    }
+//
+//    @DeleteMapping("/tickets/{id}")
+//    public ResponseEntity<HttpStatus> deleteTicket(@PathVariable("id") String id) {
+//        try {
+//            ticketService.deleteById(id);
+//            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//        } catch (Exception e) {
+//            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//    }
+//
+//    @DeleteMapping("/tickets")
+//    public ResponseEntity<HttpStatus> deleteAllTickets() {
+//        try {
+//            ticketRepository.deleteAll();
+//            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+//        } catch (Exception e) {
+//            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+//        }
+//
+//    }
 
 
 }

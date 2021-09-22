@@ -20,4 +20,6 @@ public interface TicketService {
     List<FullTicket> findAll();
 
     void deleteById(String id);
+
+    List<FullTicket> findByTitleContaining(String title);
 }
