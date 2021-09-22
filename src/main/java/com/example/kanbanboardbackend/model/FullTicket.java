@@ -10,6 +10,8 @@ import javax.persistence.*;
 @Entity
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "tickets")
 public class FullTicket {
 
@@ -23,15 +25,12 @@ public class FullTicket {
     @ColumnDefault("random_uuid()")
     private String id;
 
-    @NonNull
     @Column(name = "title")
     private String title;
 
-    @NonNull
     @Column(name = "content")
     private String content;
 
-    @NonNull
     @Column(name = "status")
     private TicketStatus status;
 
