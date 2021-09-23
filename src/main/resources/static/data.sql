@@ -1,1 +1,0 @@
---INSERT INTO ticket (title, content, status, next_id, previous_id) VALUES ('First ticket', '', 'toDo', );

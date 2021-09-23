@@ -1,5 +1,6 @@
 package com.example.kanbanboardbackend;
 
+import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.model.TicketStatus;
@@ -8,6 +9,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +19,7 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KanbanBoardBackendApplication.class)
+
 public class KanbanBoardBackendApplicationTests {
 
     @Autowired
@@ -24,6 +27,13 @@ public class KanbanBoardBackendApplicationTests {
 
     @Test
     @Transactional
+    public void givenTicketRepositoryInitiated_ThreeTicketsFound() {
+        assertEquals(3, ticketService.findAll().size());
+    }
+
+    @Test
+    @Transactional
+    @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void givenTicketRepository_whenTableIsEmpty_createANewTicketWithEmptyNextAndPrevious() throws Exception {
 
         // given a new ticket as sent from user via the API
@@ -32,9 +42,6 @@ public class KanbanBoardBackendApplicationTests {
                 .status(TicketStatus.toDo)
                 .title("title").build();
         final FullTicket ticket = ticketService.save(newTicket);
-
-        List<FullTicket> all = ticketService.findAll();
-
 
         // when saving
         FullTicket found = ticketService.findById(ticket.getId());
@@ -45,32 +52,40 @@ public class KanbanBoardBackendApplicationTests {
 
     @Test
     @Transactional
-    public void givenTicketRepository_whenAddingASecondTicket_createANewTicketWithEmptyNextAndNonEmptyPrevious() throws Exception {
+    @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
+    public void givenTicketRepository_whenAddingMultipleTickets_setNextIdAndPreviousId() throws Exception {
 
-        // given a new ticket as sent from user via the API
+        final FullTicket first = ticketService.save(
+                Ticket.builder()
+                        .title("first")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+        final FullTicket second = ticketService.save(
+                Ticket.builder()
+                        .title("second")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+        final FullTicket third = ticketService.save(
+                Ticket.builder()
+                        .title("third")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
 
-        Ticket firstTicket = Ticket.builder()
-                .content("this is its content")
-                .status(TicketStatus.toDo)
-                .title("first ticket").build();
-        Ticket secondTicket = Ticket.builder()
-                .content("this is its content")
-                .status(TicketStatus.toDo)
-                .title("second ticket").build();
-        FullTicket firstSaved = ticketService.save(firstTicket);
-        FullTicket secondSaved = ticketService.save(secondTicket);
+        assertEquals(first, ticketService.findById(first.getId()));
+        assertEquals(second, ticketService.findById(second.getId()));
+        assertEquals(third, ticketService.findById(third.getId()));
 
-        FullTicket firstFound = ticketService.findById(firstSaved.getId());
-        FullTicket secondFound = ticketService.findById(secondSaved.getId());
+        assertEquals(first.getId(), ticketService.findById(second.getId()).getPreviousId());
+        assertEquals(third.getId(), ticketService.findById(second.getId()).getNextId());
+        assertEquals(null, ticketService.findById(first.getId()).getPreviousId());
+        assertEquals(second.getId(), ticketService.findById(first.getId()).getNextId());
+        assertEquals(second.getId(), ticketService.findById(third.getId()).getPreviousId());
+        assertEquals(null, ticketService.findById(third.getId()).getNextId());
 
-        assertNotNull(firstFound);
-        assertNotNull(secondFound);
 
-        assertNull(firstFound.getPreviousId());
-        assertNull(secondFound.getNextId());
-
-        assertEquals(secondFound.getId(), firstFound.getNextId());
-        assertEquals(firstFound.getId(), secondFound.getPreviousId());
     }
 
     @Test
@@ -88,35 +103,67 @@ public class KanbanBoardBackendApplicationTests {
         assertEquals(firstSaved, last);
     }
 
-    @Test()
+    @Test(expected = TicketNotFoundException.class)
     @Transactional
-    public void givenTicketRepository_whenSaved_thenOK() throws Exception {
+    @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
+    public void givenTicketRepository_whenDeletingAlreadyDeleted_thenException() throws Exception {
 
-        // given a new ticket as sent from user via the API
-        Ticket newTicket = Ticket.builder()
-                .content("this is its content")
-                .status(TicketStatus.toDo)
-                .title("first ticket").build();
-        // when saving
-        final FullTicket ticket = ticketService.save(newTicket);
-        var found = ticketService.findById(ticket.getId());
+        final FullTicket first = ticketService.save(
+                Ticket.builder()
+                        .title("first")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+        final FullTicket second = ticketService.save(
+                Ticket.builder()
+                        .title("second")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+        final FullTicket third = ticketService.save(
+                Ticket.builder()
+                        .title("third")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
 
-        // then it is saved
-        assertNotNull(found);
+        ticketService.deleteById(second.getId());
+
+        assertEquals(third.getId(), ticketService.findById(first.getId()).getNextId());
+        assertEquals(first.getId(), ticketService.findById(third.getId()).getPreviousId());
+
+        ticketService.deleteById(second.getId());
     }
 
-    @Test()
+    @Test
     @Transactional
+    @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void givenTicketRepository_whenDeleting_thenOK() throws Exception {
-//        final FullTicket ticket = ticketService.save(
-//                Ticket.builder().build("this is a new ticket",
-//                        "this is its content",
-//                        TicketStatus.toDo));
-//
-//        assertEquals(false, ticketService.findById(ticket.getId()).isEmpty());
-//
-//        ticketService.deleteById(ticket.getId());
-//
-//        assertEquals(true, ticketService.findById(ticket.getId()).isEmpty());
+
+        final FullTicket first = ticketService.save(
+                Ticket.builder()
+                        .title("first")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+        final FullTicket second = ticketService.save(
+                Ticket.builder()
+                        .title("second")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+        final FullTicket third = ticketService.save(
+                Ticket.builder()
+                        .title("third")
+                        .content("content")
+                        .status(TicketStatus.toDo)
+                        .build());
+
+        ticketService.deleteById(second.getId());
+
+        assertEquals(third.getId(), ticketService.findById(first.getId()).getNextId());
+        assertEquals(first.getId(), ticketService.findById(third.getId()).getPreviousId());
+
+        ticketService.deleteById(third.getId());
     }
 }

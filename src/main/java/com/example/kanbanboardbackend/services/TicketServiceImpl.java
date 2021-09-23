@@ -81,15 +81,33 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    @Transactional
     public void deleteById(String id) throws TicketNotFoundException {
 
-        FullTicket byId = this.findById(id);
+        FullTicket found = this.findById(id);
+        FullTicket left = null, right = null;
 
+        if (found.getPreviousId() != null) {
+            left = this.findById(found.getPreviousId());
+        }
 
-        if (byId.getPreviousId() != null) {
-            FullTicket previous = this.findById(byId.getPreviousId());
-            FullTicket next = this.findById(byId.getNextId());
-//                previous.get().setNextId();
+        if (found.getNextId() != null) {
+            right = this.findById(found.getNextId());
+        }
+
+        if (right != null) {
+            left.setNextId(right.getId());
+        }
+
+        if (left != null) {
+            right.setPreviousId(left.getId());
+        }
+
+        if (right != null) {
+            this.ticketRepository.save(right);
+        }
+        if (left != null) {
+            this.ticketRepository.save(left);
         }
 
         this.ticketRepository.deleteById(id);

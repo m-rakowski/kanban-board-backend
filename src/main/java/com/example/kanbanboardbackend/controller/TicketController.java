@@ -24,23 +24,8 @@ public class TicketController {
     TicketService ticketService;
 
     @GetMapping("/tickets")
-    public ResponseEntity<List<FullTicket>> getAllTickets(@RequestParam(required = false) String title) {
-        try {
-            List<FullTicket> fullTickets = new ArrayList<FullTicket>();
-
-            if (title == null)
-                ticketService.findAll().forEach(fullTickets::add);
-            else
-                ticketService.findByTitleContaining(title).forEach(fullTickets::add);
-
-            if (fullTickets.isEmpty()) {
-                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-            }
-
-            return new ResponseEntity<>(fullTickets, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ResponseEntity<List<FullTicket>> getAllTickets() {
+        return new ResponseEntity<>(ticketService.findAll(), HttpStatus.OK);
     }
 
     @GetMapping("/tickets/{id}")
