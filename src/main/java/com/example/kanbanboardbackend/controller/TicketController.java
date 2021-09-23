@@ -39,7 +39,7 @@ public class TicketController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-//    @PutMapping("/tickets/{id}")
+    //    @PutMapping("/tickets/{id}")
 //    public ResponseEntity<FullTicket> updateTicket(@PathVariable("id") String id, @RequestBody FullTicket fullTicket) {
 //        Optional<FullTicket> ticketData = ticketService.findById(id);
 //
@@ -53,15 +53,11 @@ public class TicketController {
 //        }
 //    }
 //
-//    @DeleteMapping("/tickets/{id}")
-//    public ResponseEntity<HttpStatus> deleteTicket(@PathVariable("id") String id) {
-//        try {
-//            ticketService.deleteById(id);
-//            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-//        } catch (Exception e) {
-//            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//    }
+    @DeleteMapping("/tickets/{id}")
+    public ResponseEntity<HttpStatus> deleteTicket(@PathVariable("id") String id) throws TicketNotFoundException {
+        ticketService.deleteById(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 //
 //    @DeleteMapping("/tickets")
 //    public ResponseEntity<HttpStatus> deleteAllTickets() {

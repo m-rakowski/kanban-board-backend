@@ -95,12 +95,12 @@ public class TicketServiceImpl implements TicketService {
             right = this.findById(found.getNextId());
         }
 
-        if (right != null) {
-            left.setNextId(right.getId());
+        if (left != null) {
+            left.setNextId(right != null ? right.getId() : null);
         }
 
-        if (left != null) {
-            right.setPreviousId(left.getId());
+        if (right != null) {
+            right.setPreviousId(left != null ? left.getId() : null);
         }
 
         if (right != null) {
