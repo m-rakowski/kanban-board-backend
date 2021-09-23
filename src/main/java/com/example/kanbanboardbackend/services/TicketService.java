@@ -23,4 +23,6 @@ public interface TicketService {
     void deleteById(String id) throws TicketNotFoundException;
 
     List<FullTicket> findByTitleContaining(String title);
+
+    FullTicket update(String id, Ticket ticket) throws TicketNotFoundException;
 }

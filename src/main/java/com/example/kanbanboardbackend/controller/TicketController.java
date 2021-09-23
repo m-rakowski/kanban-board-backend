@@ -39,20 +39,11 @@ public class TicketController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    //    @PutMapping("/tickets/{id}")
-//    public ResponseEntity<FullTicket> updateTicket(@PathVariable("id") String id, @RequestBody FullTicket fullTicket) {
-//        Optional<FullTicket> ticketData = ticketService.findById(id);
-//
-//        if (ticketData.isPresent()) {
-//            FullTicket _fullTicket = ticketData.get();
-//            _fullTicket.setTitle(fullTicket.getTitle());
-//            _fullTicket.setContent(fullTicket.getContent());
-//            return new ResponseEntity<>(ticketService.save(_fullTicket), HttpStatus.OK);
-//        } else {
-//            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-//        }
-//    }
-//
+    @PutMapping("/tickets/{id}")
+    public ResponseEntity<FullTicket> updateTicket(@PathVariable("id") String id, @RequestBody Ticket ticket) throws TicketNotFoundException {
+        return new ResponseEntity<>(ticketService.update(id, ticket), HttpStatus.OK);
+    }
+
     @DeleteMapping("/tickets/{id}")
     public ResponseEntity<HttpStatus> deleteTicket(@PathVariable("id") String id) throws TicketNotFoundException {
         ticketService.deleteById(id);

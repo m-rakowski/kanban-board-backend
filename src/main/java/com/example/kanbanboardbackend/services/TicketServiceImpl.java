@@ -117,4 +117,13 @@ public class TicketServiceImpl implements TicketService {
     public List<FullTicket> findByTitleContaining(String title) {
         return ticketRepository.findByTitleContaining(title);
     }
+
+    @Override
+    public FullTicket update(String id, Ticket ticket) throws TicketNotFoundException {
+        FullTicket byId = this.findById(id);
+        byId.setContent(ticket.getContent());
+        byId.setStatus(ticket.getStatus());
+        byId.setTitle(ticket.getTitle());
+        return ticketRepository.save(byId);
+    }
 }
