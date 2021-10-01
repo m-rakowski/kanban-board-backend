@@ -27,11 +27,10 @@ public class TicketServiceImpl implements TicketService {
                 .content(ticket.getContent()).build();
 
         if (lastTicket != null) {
-            newTicket.setPreviousId(lastTicket.getId());
-            FullTicket save = this.ticketRepository.save(newTicket);
-            lastTicket.setNextId(save.getId());
+            FullTicket savedNewTicket = this.ticketRepository.save(newTicket);
+            lastTicket.setNextId(savedNewTicket.getId());
             this.ticketRepository.save(lastTicket);
-            return save;
+            return savedNewTicket;
         } else {
             return this.ticketRepository.save(newTicket);
         }
@@ -51,28 +50,7 @@ public class TicketServiceImpl implements TicketService {
 
     @Override
     public FullTicket findLast() {
-
         return this.ticketRepository.findLast();
-//        List<FullTicket> last = this.ticketRepository.findLast();
-//
-//        if (last.size() == 0) {
-//            return null;
-//        } else {
-//            return last.get(0);
-//        }
-    }
-
-    @Override
-    public FullTicket findFirst() {
-        return this.ticketRepository.findFirst();
-
-//        List<FullTicket> first = this.ticketRepository.findFirst();
-//
-//        if (first.size() == 0) {
-//            return null;
-//        } else {
-//            return first.get(0);
-//        }
     }
 
     @Override
@@ -84,31 +62,12 @@ public class TicketServiceImpl implements TicketService {
     @Transactional
     public void deleteById(String id) throws TicketNotFoundException {
 
-        FullTicket found = this.findById(id);
-        FullTicket left = null, right = null;
+        FullTicket foundById = this.findById(id);
 
-        if (found.getPreviousId() != null) {
-            left = this.findById(found.getPreviousId());
-        }
-
-        if (found.getNextId() != null) {
-            right = this.findById(found.getNextId());
-        }
-
-        if (left != null) {
-            left.setNextId(right != null ? right.getId() : null);
-        }
-
-        if (right != null) {
-            right.setPreviousId(left != null ? left.getId() : null);
-        }
-
-        if (right != null) {
-            this.ticketRepository.save(right);
-        }
-        if (left != null) {
-            this.ticketRepository.save(left);
-        }
+        // update left neighbor
+        FullTicket leftNeighbor = findByNextId(id);
+        leftNeighbor.setNextId(foundById.getNextId());
+        this.ticketRepository.save(leftNeighbor);
 
         this.ticketRepository.deleteById(id);
     }
@@ -125,5 +84,10 @@ public class TicketServiceImpl implements TicketService {
         byId.setStatus(ticket.getStatus());
         byId.setTitle(ticket.getTitle());
         return ticketRepository.save(byId);
+    }
+
+    @Override
+    public FullTicket findByNextId(String nextId) {
+        return this.ticketRepository.findByNextId(nextId);
     }
 }

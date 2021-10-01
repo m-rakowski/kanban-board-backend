@@ -47,13 +47,12 @@ public class KanbanBoardBackendApplicationTests {
         FullTicket found = ticketService.findById(ticket.getId());
 
         assertNull(found.getNextId());
-        assertNull(found.getPreviousId());
     }
 
     @Test
     @Transactional
     @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
-    public void givenTicketRepository_whenAddingMultipleTickets_setNextIdAndPreviousId() throws Exception {
+    public void givenTicketRepository_whenAddingMultipleTickets_setNextId() throws Exception {
 
         final FullTicket first = ticketService.save(
                 Ticket.builder()
@@ -78,13 +77,9 @@ public class KanbanBoardBackendApplicationTests {
         assertEquals(second, ticketService.findById(second.getId()));
         assertEquals(third, ticketService.findById(third.getId()));
 
-        assertEquals(first.getId(), ticketService.findById(second.getId()).getPreviousId());
         assertEquals(third.getId(), ticketService.findById(second.getId()).getNextId());
-        assertEquals(null, ticketService.findById(first.getId()).getPreviousId());
         assertEquals(second.getId(), ticketService.findById(first.getId()).getNextId());
-        assertEquals(second.getId(), ticketService.findById(third.getId()).getPreviousId());
         assertEquals(null, ticketService.findById(third.getId()).getNextId());
-
 
     }
 
@@ -130,7 +125,6 @@ public class KanbanBoardBackendApplicationTests {
         ticketService.deleteById(second.getId());
 
         assertEquals(third.getId(), ticketService.findById(first.getId()).getNextId());
-        assertEquals(first.getId(), ticketService.findById(third.getId()).getPreviousId());
 
         ticketService.deleteById(second.getId());
     }
@@ -162,8 +156,21 @@ public class KanbanBoardBackendApplicationTests {
         ticketService.deleteById(second.getId());
 
         assertEquals(third.getId(), ticketService.findById(first.getId()).getNextId());
-        assertEquals(first.getId(), ticketService.findById(third.getId()).getPreviousId());
 
         ticketService.deleteById(third.getId());
+    }
+
+    @Test
+    @Transactional
+    public void testFindByNextId() throws Exception {
+        FullTicket byNextId = ticketService.findByNextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5");
+
+        assertEquals(FullTicket.builder()
+                .id("2e25ddd1-602e-4f94-ab54-fc0147989042")
+                .content("First")
+                .nextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5")
+                .title("first")
+                .status(TicketStatus.toDo)
+                .build(), byNextId);
     }
 }

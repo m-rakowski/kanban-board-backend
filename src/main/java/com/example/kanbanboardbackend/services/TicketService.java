@@ -16,8 +16,6 @@ public interface TicketService {
 
     FullTicket findLast();
 
-    FullTicket findFirst();
-
     List<FullTicket> findAll();
 
     void deleteById(String id) throws TicketNotFoundException;
@@ -25,4 +23,6 @@ public interface TicketService {
     List<FullTicket> findByTitleContaining(String title);
 
     FullTicket update(String id, Ticket ticket) throws TicketNotFoundException;
+
+    FullTicket findByNextId(String nextId);
 }

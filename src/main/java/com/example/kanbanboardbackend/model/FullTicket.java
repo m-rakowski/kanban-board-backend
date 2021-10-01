@@ -36,7 +36,4 @@ public class FullTicket {
 
     @Column(name = "nextId")
     private String nextId;
-
-    @Column(name = "previousId")
-    private String previousId;
 }
