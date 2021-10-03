@@ -2,9 +2,11 @@ package com.example.kanbanboardbackend;
 
 import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
+import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.model.TicketStatus;
 import com.example.kanbanboardbackend.services.TicketService;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KanbanBoardBackendApplication.class)
@@ -24,6 +27,39 @@ public class KanbanBoardBackendApplicationTests {
 
     @Autowired
     private TicketService ticketService;
+
+    private FullTicket first;
+    private FullTicket second;
+    private FullTicket third;
+
+    @Before
+    public void setUpFirstSecondAndThird() {
+
+        first = FullTicket.builder()
+                .id("2e25ddd1-602e-4f94-ab54-fc0147989042")
+                .content("First")
+                .nextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5")
+                .title("first")
+                .status(TicketStatus.toDo)
+                .build();
+
+        second = FullTicket.builder()
+                .id("c0ed5dfa-8eb9-40f4-a425-2065b97631a5")
+                .content("Second")
+                .nextId("e3929b60-6910-4a54-b4f1-324af7180fa6")
+                .title("second")
+                .status(TicketStatus.toDo)
+                .build();
+
+        third = FullTicket.builder()
+                .id("e3929b60-6910-4a54-b4f1-324af7180fa6")
+                .content("Third")
+                .nextId(null)
+                .title("third")
+                .status(TicketStatus.toDo)
+                .build();
+
+    }
 
     @Test
     @Transactional
@@ -172,5 +208,54 @@ public class KanbanBoardBackendApplicationTests {
                 .title("first")
                 .status(TicketStatus.toDo)
                 .build(), byNextId);
+    }
+
+    @Test
+    @Transactional
+    public void testMovingInPlace() throws Exception {
+        ticketService.moveTicket(new MoveRequest(first, first, null, TicketStatus.toTest, TicketStatus.toDo));
+        assertEquals(List.of(first, second, third), ticketService.findAll());
+    }
+
+    @Test
+    @Transactional
+    public void testMovingFirstToBeLast() throws Exception {
+
+        ticketService.moveTicket(new MoveRequest(first, third, null, TicketStatus.toTest, TicketStatus.toDo));
+
+        third.setNextId(first.getId());
+        first.setNextId(null);
+        assertEquals(List.of(first, second, third), ticketService.findAll());
+    }
+
+    @Test
+    @Transactional
+    public void testMovingLastToBeFirst() throws Exception {
+
+        ticketService.moveTicket(new MoveRequest(
+                third,
+                null,
+                first, TicketStatus.toDo, TicketStatus.toDo));
+
+        third.setNextId(first.getId());
+        second.setNextId(null);
+        assertEquals(List.of(first, second, third), ticketService.findAll());
+    }
+
+    @Transactional
+    @Test(expected = IllegalArgumentException.class)
+    public void testMovingBothNulls() throws Exception {
+        ticketService.moveTicket(new MoveRequest(third, null, null, TicketStatus.toDo, TicketStatus.toDo));
+    }
+
+    @Transactional
+    @Test
+    public void testMovingToEmptyList() throws Exception {
+        ticketService.moveTicket(new MoveRequest(
+                third, null, null, TicketStatus.toDo, TicketStatus.toTest));
+        second.setNextId(null);
+        third.setNextId(null);
+        third.setStatus(TicketStatus.toTest);
+        assertEquals(List.of(first, second, third), this.ticketService.findAll());
     }
 }

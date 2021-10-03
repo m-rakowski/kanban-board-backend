@@ -2,6 +2,7 @@ package com.example.kanbanboardbackend.controller;
 
 import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
+import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.services.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.ArrayList;
 import java.util.List;
 
 @CrossOrigin(origins = "http://localhost:8081")
@@ -49,17 +49,11 @@ public class TicketController {
         ticketService.deleteById(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
-//
-//    @DeleteMapping("/tickets")
-//    public ResponseEntity<HttpStatus> deleteAllTickets() {
-//        try {
-//            ticketRepository.deleteAll();
-//            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-//        } catch (Exception e) {
-//            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-//        }
-//
-//    }
 
+    @PostMapping("/tickets/move")
+    public ResponseEntity<HttpStatus> moveTicket(@Valid @RequestBody MoveRequest moveRequest) throws TicketNotFoundException {
 
+        this.ticketService.moveTicket(moveRequest);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

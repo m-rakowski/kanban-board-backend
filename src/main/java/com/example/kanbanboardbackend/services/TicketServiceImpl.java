@@ -2,6 +2,7 @@ package com.example.kanbanboardbackend.services;
 
 import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
+import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.repository.TicketRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,5 +90,117 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public FullTicket findByNextId(String nextId) {
         return this.ticketRepository.findByNextId(nextId);
+    }
+
+    @Override
+    public void moveTicket(MoveRequest moveRequest) throws TicketNotFoundException {
+        if (moveRequest.getFromListStatus().equals(moveRequest.getToListStatus())) {
+            this.moveTicketWithinTheSameTicketStatus(moveRequest);
+        } else {
+            this.moveTicketToAnotherTicketStatus(moveRequest);
+        }
+    }
+
+    private void moveTicketWithinTheSameTicketStatus(MoveRequest moveRequest) throws TicketNotFoundException {
+        FullTicket movedTicket = findById(moveRequest.getMovedTicket().getId());
+
+
+        if (moveRequest.getAfterThisOne() != null) {
+
+
+            if (movedTicket.getId().equals(moveRequest.getAfterThisOne().getId())) {
+                return;
+            }
+
+            FullTicket leftNeighbor = findByNextId(movedTicket.getId());
+            if (leftNeighbor != null) {
+                leftNeighbor.setNextId(movedTicket.getNextId());
+                this.ticketRepository.save(leftNeighbor);
+            }
+            movedTicket.setNextId(moveRequest.getAfterThisOne().getNextId());
+            this.ticketRepository.save(movedTicket);
+
+            moveRequest.getAfterThisOne().setNextId(movedTicket.getId());
+            this.ticketRepository.save(moveRequest.getAfterThisOne());
+        }
+
+        if (moveRequest.getBeforeThisOne() != null) {
+
+            if (movedTicket.getId().equals(moveRequest.getBeforeThisOne().getId())) {
+                return;
+            }
+            FullTicket leftOfBeforeThisOne = findByNextId(moveRequest.getBeforeThisOne().getId());
+            if (leftOfBeforeThisOne != null) {
+                leftOfBeforeThisOne.setNextId(movedTicket.getId());
+                this.ticketRepository.save(leftOfBeforeThisOne);
+            }
+
+            FullTicket leftOfThisOne = findByNextId(movedTicket.getId());
+            if (leftOfThisOne != null) {
+                leftOfThisOne.setNextId(movedTicket.getNextId());
+                this.ticketRepository.save(leftOfThisOne);
+            }
+            movedTicket.setNextId(moveRequest.getBeforeThisOne().getId());
+            this.ticketRepository.save(movedTicket);
+        }
+    }
+
+    private void moveTicketToAnotherTicketStatus(MoveRequest moveRequest) throws TicketNotFoundException {
+
+        FullTicket movedTicket = findById(moveRequest.getMovedTicket().getId());
+        movedTicket.setStatus(moveRequest.getToListStatus());
+
+        if (moveRequest.getAfterThisOne() == null && moveRequest.getBeforeThisOne() == null) {
+
+            FullTicket leftNeighbor = findByNextId(movedTicket.getId());
+
+            if (leftNeighbor != null) {
+                leftNeighbor.setNextId(movedTicket.getNextId());
+                this.ticketRepository.save(leftNeighbor);
+            }
+            movedTicket.setNextId(null);
+            this.ticketRepository.save(movedTicket);
+            return;
+        }
+
+        if (moveRequest.getAfterThisOne() != null) {
+
+            FullTicket afterThisOne = findById(moveRequest.getAfterThisOne().getId());
+            if (movedTicket.getId().equals(afterThisOne.getId())) {
+                return;
+            }
+
+            FullTicket leftNeighbor = findByNextId(movedTicket.getId());
+            if (leftNeighbor != null) {
+                leftNeighbor.setNextId(movedTicket.getNextId());
+                this.ticketRepository.save(leftNeighbor);
+            }
+            movedTicket.setNextId(afterThisOne.getNextId());
+            this.ticketRepository.save(movedTicket);
+
+            afterThisOne.setNextId(movedTicket.getId());
+            this.ticketRepository.save(afterThisOne);
+        }
+
+        if (moveRequest.getBeforeThisOne() != null) {
+
+            FullTicket beforeThisOne = findById(moveRequest.getBeforeThisOne().getId());
+            if (movedTicket.getId().equals(beforeThisOne.getId())) {
+                return;
+            }
+            FullTicket leftOfBeforeThisOne = findByNextId(beforeThisOne.getId());
+            if (leftOfBeforeThisOne != null) {
+                leftOfBeforeThisOne.setNextId(movedTicket.getId());
+                this.ticketRepository.save(leftOfBeforeThisOne);
+            }
+
+            FullTicket leftOfThisOne = findByNextId(movedTicket.getId());
+            if (leftOfThisOne != null) {
+                leftOfThisOne.setNextId(movedTicket.getNextId());
+                this.ticketRepository.save(leftOfThisOne);
+            }
+            movedTicket.setNextId(beforeThisOne.getId());
+            this.ticketRepository.save(movedTicket);
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.example.kanbanboardbackend.services;
 
 import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
+import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,4 +26,6 @@ public interface TicketService {
     FullTicket update(String id, Ticket ticket) throws TicketNotFoundException;
 
     FullTicket findByNextId(String nextId);
+
+    void moveTicket(MoveRequest moveRequest) throws TicketNotFoundException;
 }
