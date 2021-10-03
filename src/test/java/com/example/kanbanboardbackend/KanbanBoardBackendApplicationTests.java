@@ -22,7 +22,7 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KanbanBoardBackendApplication.class)
-
+@Transactional
 public class KanbanBoardBackendApplicationTests {
 
     @Autowired
@@ -62,13 +62,11 @@ public class KanbanBoardBackendApplicationTests {
     }
 
     @Test
-    @Transactional
     public void givenTicketRepositoryInitiated_ThreeTicketsFound() {
         assertEquals(3, ticketService.findAll().size());
     }
 
     @Test
-    @Transactional
     @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void givenTicketRepository_whenTableIsEmpty_createANewTicketWithEmptyNextAndPrevious() throws Exception {
 
@@ -86,7 +84,6 @@ public class KanbanBoardBackendApplicationTests {
     }
 
     @Test
-    @Transactional
     @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void givenTicketRepository_whenAddingMultipleTickets_setNextId() throws Exception {
 
@@ -116,11 +113,10 @@ public class KanbanBoardBackendApplicationTests {
         assertEquals(third.getId(), ticketService.findById(second.getId()).getNextId());
         assertEquals(second.getId(), ticketService.findById(first.getId()).getNextId());
         assertEquals(null, ticketService.findById(third.getId()).getNextId());
-
     }
 
     @Test
-    @Transactional
+    @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void testFindLast() throws Exception {
 
         // given a new ticket as sent from user via the API
@@ -130,12 +126,11 @@ public class KanbanBoardBackendApplicationTests {
                 .title("first ticket").build();
         FullTicket firstSaved = ticketService.save(firstTicket);
 
-        FullTicket last = ticketService.findLast();
+        FullTicket last = ticketService.findLast(TicketStatus.toDo);
         assertEquals(firstSaved, last);
     }
 
     @Test(expected = TicketNotFoundException.class)
-    @Transactional
     @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void givenTicketRepository_whenDeletingAlreadyDeleted_thenException() throws Exception {
 
@@ -166,7 +161,6 @@ public class KanbanBoardBackendApplicationTests {
     }
 
     @Test
-    @Transactional
     @Sql(scripts = "/reset_db.sql") // to create DB tables and init sample DB data
     public void givenTicketRepository_whenDeleting_thenOK() throws Exception {
 
@@ -197,7 +191,6 @@ public class KanbanBoardBackendApplicationTests {
     }
 
     @Test
-    @Transactional
     public void testFindByNextId() throws Exception {
         FullTicket byNextId = ticketService.findByNextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5");
 
@@ -211,14 +204,12 @@ public class KanbanBoardBackendApplicationTests {
     }
 
     @Test
-    @Transactional
     public void testMovingInPlace() throws Exception {
         ticketService.moveTicket(new MoveRequest(first, first, null, TicketStatus.toTest, TicketStatus.toDo));
         assertEquals(List.of(first, second, third), ticketService.findAll());
     }
 
     @Test
-    @Transactional
     public void testMovingFirstToBeLast() throws Exception {
 
         ticketService.moveTicket(new MoveRequest(first, third, null, TicketStatus.toTest, TicketStatus.toDo));
@@ -229,7 +220,6 @@ public class KanbanBoardBackendApplicationTests {
     }
 
     @Test
-    @Transactional
     public void testMovingLastToBeFirst() throws Exception {
 
         ticketService.moveTicket(new MoveRequest(
@@ -242,13 +232,6 @@ public class KanbanBoardBackendApplicationTests {
         assertEquals(List.of(first, second, third), ticketService.findAll());
     }
 
-    @Transactional
-    @Test(expected = IllegalArgumentException.class)
-    public void testMovingBothNulls() throws Exception {
-        ticketService.moveTicket(new MoveRequest(third, null, null, TicketStatus.toDo, TicketStatus.toDo));
-    }
-
-    @Transactional
     @Test
     public void testMovingToEmptyList() throws Exception {
         ticketService.moveTicket(new MoveRequest(

@@ -4,6 +4,7 @@ import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
+import com.example.kanbanboardbackend.model.TicketStatus;
 import com.example.kanbanboardbackend.repository.TicketRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class TicketServiceImpl implements TicketService {
     @Override
     @Transactional
     public FullTicket save(Ticket ticket) {
-        FullTicket lastTicket = this.findLast();
+        FullTicket lastTicket = this.findLast(ticket.getStatus());
         FullTicket newTicket = FullTicket.builder()
                 .title(ticket.getTitle())
                 .status(ticket.getStatus())
@@ -37,6 +38,7 @@ public class TicketServiceImpl implements TicketService {
         }
     }
 
+
     @Override
     public FullTicket findById(String id) throws TicketNotFoundException {
         Optional<FullTicket> foundById = ticketRepository.findById(id);
@@ -50,8 +52,8 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public FullTicket findLast() {
-        return this.ticketRepository.findLast();
+    public FullTicket findLast(TicketStatus ticketStatus) {
+        return this.ticketRepository.findByNextIdAndStatus(null, ticketStatus);
     }
 
     @Override
@@ -67,9 +69,10 @@ public class TicketServiceImpl implements TicketService {
 
         // update left neighbor
         FullTicket leftNeighbor = findByNextId(id);
-        leftNeighbor.setNextId(foundById.getNextId());
-        this.ticketRepository.save(leftNeighbor);
-
+        if (leftNeighbor != null) {
+            leftNeighbor.setNextId(foundById.getNextId());
+            this.ticketRepository.save(leftNeighbor);
+        }
         this.ticketRepository.deleteById(id);
     }
 
@@ -93,6 +96,7 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    @Transactional
     public void moveTicket(MoveRequest moveRequest) throws TicketNotFoundException {
         if (moveRequest.getFromListStatus().equals(moveRequest.getToListStatus())) {
             this.moveTicketWithinTheSameTicketStatus(moveRequest);

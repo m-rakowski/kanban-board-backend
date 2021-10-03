@@ -2,6 +2,7 @@ package com.example.kanbanboardbackend.repository;
 
 
 import com.example.kanbanboardbackend.model.FullTicket;
+import com.example.kanbanboardbackend.model.TicketStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -11,9 +12,8 @@ public interface TicketRepository extends JpaRepository<FullTicket, String> {
 
     FullTicket findByNextId(String nextId);
 
-    List<FullTicket> findByTitleContaining(String title);
+    FullTicket findByNextIdAndStatus(String nextId, TicketStatus ticketStatus);
 
-    @Query(value = "SELECT * FROM TICKETS WHERE NEXT_ID IS NULL", nativeQuery = true)
-    FullTicket findLast();
+    List<FullTicket> findByTitleContaining(String title);
 
 }
