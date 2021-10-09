@@ -15,10 +15,12 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KanbanBoardBackendApplication.class)
@@ -28,42 +30,64 @@ public class KanbanBoardBackendApplicationTests {
     @Autowired
     private TicketService ticketService;
 
-    private FullTicket first;
-    private FullTicket second;
-    private FullTicket third;
+    private FullTicket rootToDo;
+    private FullTicket rootToTest;
+    private FullTicket rootDone;
+    private FullTicket firstToDo;
+    private FullTicket secondToDo;
+    private FullTicket thirdToDo;
 
     @Before
     public void setUpFirstSecondAndThird() {
-
-        first = FullTicket.builder()
-                .id("2e25ddd1-602e-4f94-ab54-fc0147989042")
-                .content("First")
-                .nextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5")
-                .title("first")
-                .status(TicketStatus.toDo)
-                .build();
-
-        second = FullTicket.builder()
-                .id("c0ed5dfa-8eb9-40f4-a425-2065b97631a5")
-                .content("Second")
-                .nextId("e3929b60-6910-4a54-b4f1-324af7180fa6")
-                .title("second")
-                .status(TicketStatus.toDo)
-                .build();
-
-        third = FullTicket.builder()
-                .id("e3929b60-6910-4a54-b4f1-324af7180fa6")
-                .content("Third")
-                .nextId(null)
-                .title("third")
-                .status(TicketStatus.toDo)
-                .build();
-
+        rootToDo = FullTicket.builder()
+                .id("1b1a957e-4335-470e-babe-60d32b17aa2d").content("toDoRoot")
+                .nextId("2e25ddd1-602e-4f94-ab54-fc0147989042").status(TicketStatus.toDo)
+                .title("toDoRoot").isRoot(true).build();
+        rootToTest = FullTicket.builder()
+                .id("103fe588-fefa-4814-9bf3-6055f0149adb").content("toTestRoot")
+                .nextId(null).status(TicketStatus.toTest)
+                .title("toTestRoot").isRoot(true).build();
+        rootDone = FullTicket.builder()
+                .id("43efb13a-b048-4533-b7b1-cbbd851365e6").content("doneRoot")
+                .nextId(null).status(TicketStatus.done)
+                .title("doneRoot").isRoot(true).build();
+        firstToDo = FullTicket.builder()
+                .id("2e25ddd1-602e-4f94-ab54-fc0147989042").content("First ToDo")
+                .nextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5").status(TicketStatus.toDo)
+                .title("first toDo").isRoot(false).build();
+        secondToDo = FullTicket.builder()
+                .id("c0ed5dfa-8eb9-40f4-a425-2065b97631a5").content("Second ToDo")
+                .nextId("e3929b60-6910-4a54-b4f1-324af7180fa6").status(TicketStatus.toDo)
+                .title("second toDo").isRoot(false).build();
+        thirdToDo = FullTicket.builder()
+                .id("e3929b60-6910-4a54-b4f1-324af7180fa6").content("Third ToDo")
+                .nextId(null).status(TicketStatus.toDo)
+                .title("third toDo").isRoot(false).build();
     }
 
     @Test
-    public void givenTicketRepositoryInitiated_ThreeTicketsFound() {
-        assertEquals(3, ticketService.findAll().size());
+    @Sql(scripts = "/mixed_tickets.sql") // to create DB tables and init sample DB data
+    public void testIfFindAllReturnsSortedTickets() {
+        assertEquals(List.of(rootToDo, firstToDo, secondToDo, thirdToDo, rootToTest, rootDone), ticketService.findAllAsList());
+        assertEquals(Map.of(
+                TicketStatus.toDo, List.of(rootToDo, firstToDo, secondToDo, thirdToDo),
+                TicketStatus.toTest, List.of(rootToTest),
+                TicketStatus.done, List.of(rootDone)
+        ), ticketService.getAll());
+    }
+
+    @Test
+    public void givenTicketRepositoryInitiated_ThreeRootTicketsFound() {
+        var roots = ticketService.findAllAsList()
+                .stream()
+                .filter(FullTicket::getIsRoot)
+                .collect(Collectors.toList());
+        assertEquals(3, roots.size());
+    }
+
+    @Test
+    public void givenTicketRepositoryInitiated_SixTicketsFound() {
+        assertEquals(6, ticketService.findAllAsList().size());
     }
 
     @Test
@@ -194,51 +218,78 @@ public class KanbanBoardBackendApplicationTests {
     public void testFindByNextId() throws Exception {
         FullTicket byNextId = ticketService.findByNextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5");
 
-        assertEquals(FullTicket.builder()
-                .id("2e25ddd1-602e-4f94-ab54-fc0147989042")
-                .content("First")
-                .nextId("c0ed5dfa-8eb9-40f4-a425-2065b97631a5")
-                .title("first")
-                .status(TicketStatus.toDo)
-                .build(), byNextId);
+        assertNotNull(byNextId);
+        assertEquals("c0ed5dfa-8eb9-40f4-a425-2065b97631a5", byNextId.getNextId());
     }
 
     @Test
     public void testMovingInPlace() throws Exception {
-        ticketService.moveTicket(new MoveRequest(first, first, null, TicketStatus.toTest, TicketStatus.toDo));
-        assertEquals(List.of(first, second, third), ticketService.findAll());
+        ticketService.moveTicket(new MoveRequest(firstToDo.getId(), firstToDo.getId()));
+
+        assertEquals(
+                Map.of(
+                        TicketStatus.toDo, listOfTickets(rootToDo, firstToDo, secondToDo, thirdToDo),
+                        TicketStatus.toTest, listOfTickets(rootToTest),
+                        TicketStatus.done, listOfTickets(rootDone)
+                ),
+                this.ticketService.getAll());
     }
 
     @Test
     public void testMovingFirstToBeLast() throws Exception {
 
-        ticketService.moveTicket(new MoveRequest(first, third, null, TicketStatus.toTest, TicketStatus.toDo));
+        ticketService.moveTicket(new MoveRequest(firstToDo.getId(), thirdToDo.getId()));
 
-        third.setNextId(first.getId());
-        first.setNextId(null);
-        assertEquals(List.of(first, second, third), ticketService.findAll());
+        assertEquals(
+                Map.of(
+                        TicketStatus.toDo, listOfTickets(rootToDo, secondToDo, thirdToDo, firstToDo),
+                        TicketStatus.toTest, listOfTickets(rootToTest),
+                        TicketStatus.done, listOfTickets(rootDone)
+                ),
+                this.ticketService.getAll());
     }
 
     @Test
     public void testMovingLastToBeFirst() throws Exception {
 
         ticketService.moveTicket(new MoveRequest(
-                third,
-                null,
-                first, TicketStatus.toDo, TicketStatus.toDo));
+                thirdToDo.getId(),
+                firstToDo.getId()));
 
-        third.setNextId(first.getId());
-        second.setNextId(null);
-        assertEquals(List.of(first, second, third), ticketService.findAll());
+        assertEquals(
+                Map.of(
+                        TicketStatus.toDo, listOfTickets(rootToDo, firstToDo, thirdToDo, secondToDo),
+                        TicketStatus.toTest, listOfTickets(rootToTest),
+                        TicketStatus.done, listOfTickets(rootDone)
+                ),
+                this.ticketService.getAll());
     }
 
     @Test
     public void testMovingToEmptyList() throws Exception {
-        ticketService.moveTicket(new MoveRequest(
-                third, null, null, TicketStatus.toDo, TicketStatus.toTest));
-        second.setNextId(null);
-        third.setNextId(null);
-        third.setStatus(TicketStatus.toTest);
-        assertEquals(List.of(first, second, third), this.ticketService.findAll());
+        ticketService.moveTicket(
+                new MoveRequest(
+                        thirdToDo.getId(),
+                        rootToTest.getId())
+        );
+
+        thirdToDo.setStatus(TicketStatus.toTest);
+        assertEquals(
+                Map.of(
+                        TicketStatus.toDo, listOfTickets(rootToDo, firstToDo, secondToDo),
+                        TicketStatus.toTest, listOfTickets(rootToTest, thirdToDo),
+                        TicketStatus.done, listOfTickets(rootDone)
+                ),
+                this.ticketService.getAll());
+    }
+
+    private List<FullTicket> listOfTickets(FullTicket... tickets) {
+
+        for (int i = 0; i < tickets.length - 1; i++) {
+            tickets[i].setNextId(tickets[i + 1].getId());
+        }
+
+        tickets[tickets.length - 1].setNextId(null);
+        return Arrays.asList(tickets);
     }
 }

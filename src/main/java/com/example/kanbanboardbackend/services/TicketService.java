@@ -5,10 +5,9 @@ import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
 import com.example.kanbanboardbackend.model.TicketStatus;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 public interface TicketService {
     FullTicket save(Ticket ticket);
@@ -17,7 +16,11 @@ public interface TicketService {
 
     FullTicket findLast(TicketStatus ticketStatus);
 
-    List<FullTicket> findAll();
+    List<FullTicket> findAllAsList();
+
+    Map<String, FullTicket> findAllAsMap();
+
+    Map<TicketStatus, List<FullTicket>> getAll();
 
     void deleteById(String id) throws TicketNotFoundException;
 

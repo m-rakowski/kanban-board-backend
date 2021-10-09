@@ -4,6 +4,7 @@ import com.example.kanbanboardbackend.error.TicketNotFoundException;
 import com.example.kanbanboardbackend.model.FullTicket;
 import com.example.kanbanboardbackend.model.MoveRequest;
 import com.example.kanbanboardbackend.model.Ticket;
+import com.example.kanbanboardbackend.model.TicketStatus;
 import com.example.kanbanboardbackend.services.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins = "http://localhost:8081")
 @RestController
@@ -24,8 +26,8 @@ public class TicketController {
     TicketService ticketService;
 
     @GetMapping("/tickets")
-    public ResponseEntity<List<FullTicket>> getAllTickets() {
-        return new ResponseEntity<>(ticketService.findAll(), HttpStatus.OK);
+    public ResponseEntity<Map<TicketStatus, List<FullTicket>>> getAllTickets() {
+        return new ResponseEntity<>(ticketService.getAll(), HttpStatus.OK);
     }
 
     @GetMapping("/tickets/{id}")

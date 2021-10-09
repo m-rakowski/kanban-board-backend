@@ -1,9 +1,11 @@
 package com.example.kanbanboardbackend.model;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 
@@ -14,7 +16,6 @@ import javax.persistence.*;
 @AllArgsConstructor
 @Table(name = "tickets")
 public class FullTicket {
-
 
     @Id
     @GeneratedValue(generator = "UUID")
@@ -36,4 +37,8 @@ public class FullTicket {
 
     @Column(name = "nextId")
     private String nextId;
+
+    @Builder.Default
+    @Column(name = "isRoot", columnDefinition = "boolean default false")
+    private Boolean isRoot = false;
 }

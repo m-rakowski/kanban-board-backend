@@ -10,8 +10,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class TicketServiceImpl implements TicketService {
@@ -57,8 +58,23 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
-    public List<FullTicket> findAll() {
-        return this.ticketRepository.findAll();
+    public List<FullTicket> findAllAsList() {
+        var all = this.ticketRepository.findAll();
+        return Stream.of(
+                        sorted(TicketStatus.toDo, all),
+                        sorted(TicketStatus.toTest, all),
+                        sorted(TicketStatus.done, all)
+                )
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Map<String, FullTicket> findAllAsMap() {
+        return findAllAsList()
+                .stream()
+                .collect(Collectors.toMap(FullTicket::getId, ticket -> ticket)
+                );
     }
 
     @Override
@@ -96,115 +112,87 @@ public class TicketServiceImpl implements TicketService {
     }
 
     @Override
+    public Map<TicketStatus, List<FullTicket>> getAll() {
+        var all = this.ticketRepository.findAll();
+        return Map.of(
+                TicketStatus.toDo, sorted(TicketStatus.toDo, all),
+                TicketStatus.toTest, sorted(TicketStatus.toTest, all),
+                TicketStatus.done, sorted(TicketStatus.done, all)
+        );
+    }
+
+    @Override
     @Transactional
     public void moveTicket(MoveRequest moveRequest) throws TicketNotFoundException {
-        if (moveRequest.getFromListStatus().equals(moveRequest.getToListStatus())) {
-            this.moveTicketWithinTheSameTicketStatus(moveRequest);
+
+        FullTicket movedTicket = findById(moveRequest.getMovedTicketId());
+        FullTicket afterThisOne = findById(moveRequest.getAfterThisOneId());
+
+        if (movedTicket.getStatus().equals(afterThisOne.getStatus())) {
+            this.moveTicketWithinTheSameTicketStatus(movedTicket, afterThisOne);
         } else {
-            this.moveTicketToAnotherTicketStatus(moveRequest);
+            this.moveTicketToAnotherTicketStatus(movedTicket, afterThisOne);
         }
     }
 
-    private void moveTicketWithinTheSameTicketStatus(MoveRequest moveRequest) throws TicketNotFoundException {
-        FullTicket movedTicket = findById(moveRequest.getMovedTicket().getId());
+    private void moveTicketWithinTheSameTicketStatus(FullTicket movedTicket, FullTicket afterThisOne) throws TicketNotFoundException {
 
-
-        if (moveRequest.getAfterThisOne() != null) {
-
-
-            if (movedTicket.getId().equals(moveRequest.getAfterThisOne().getId())) {
-                return;
-            }
-
-            FullTicket leftNeighbor = findByNextId(movedTicket.getId());
-            if (leftNeighbor != null) {
-                leftNeighbor.setNextId(movedTicket.getNextId());
-                this.ticketRepository.save(leftNeighbor);
-            }
-            movedTicket.setNextId(moveRequest.getAfterThisOne().getNextId());
-            this.ticketRepository.save(movedTicket);
-
-            moveRequest.getAfterThisOne().setNextId(movedTicket.getId());
-            this.ticketRepository.save(moveRequest.getAfterThisOne());
-        }
-
-        if (moveRequest.getBeforeThisOne() != null) {
-
-            if (movedTicket.getId().equals(moveRequest.getBeforeThisOne().getId())) {
-                return;
-            }
-            FullTicket leftOfBeforeThisOne = findByNextId(moveRequest.getBeforeThisOne().getId());
-            if (leftOfBeforeThisOne != null) {
-                leftOfBeforeThisOne.setNextId(movedTicket.getId());
-                this.ticketRepository.save(leftOfBeforeThisOne);
-            }
-
-            FullTicket leftOfThisOne = findByNextId(movedTicket.getId());
-            if (leftOfThisOne != null) {
-                leftOfThisOne.setNextId(movedTicket.getNextId());
-                this.ticketRepository.save(leftOfThisOne);
-            }
-            movedTicket.setNextId(moveRequest.getBeforeThisOne().getId());
-            this.ticketRepository.save(movedTicket);
-        }
-    }
-
-    private void moveTicketToAnotherTicketStatus(MoveRequest moveRequest) throws TicketNotFoundException {
-
-        FullTicket movedTicket = findById(moveRequest.getMovedTicket().getId());
-        movedTicket.setStatus(moveRequest.getToListStatus());
-
-        if (moveRequest.getAfterThisOne() == null && moveRequest.getBeforeThisOne() == null) {
-
-            FullTicket leftNeighbor = findByNextId(movedTicket.getId());
-
-            if (leftNeighbor != null) {
-                leftNeighbor.setNextId(movedTicket.getNextId());
-                this.ticketRepository.save(leftNeighbor);
-            }
-            movedTicket.setNextId(null);
-            this.ticketRepository.save(movedTicket);
+        if (movedTicket.getId().equals(afterThisOne.getId())) {
             return;
         }
 
-        if (moveRequest.getAfterThisOne() != null) {
+        FullTicket leftNeighbor = findByNextId(movedTicket.getId());
+        if (leftNeighbor != null) {
+            leftNeighbor.setNextId(movedTicket.getNextId());
+            this.ticketRepository.save(leftNeighbor);
+        }
+        movedTicket.setNextId(afterThisOne.getNextId());
+        this.ticketRepository.save(movedTicket);
 
-            FullTicket afterThisOne = findById(moveRequest.getAfterThisOne().getId());
-            if (movedTicket.getId().equals(afterThisOne.getId())) {
-                return;
-            }
+        afterThisOne.setNextId(movedTicket.getId());
+        this.ticketRepository.save(afterThisOne);
+    }
 
-            FullTicket leftNeighbor = findByNextId(movedTicket.getId());
-            if (leftNeighbor != null) {
-                leftNeighbor.setNextId(movedTicket.getNextId());
-                this.ticketRepository.save(leftNeighbor);
-            }
-            movedTicket.setNextId(afterThisOne.getNextId());
-            this.ticketRepository.save(movedTicket);
+    private void moveTicketToAnotherTicketStatus(FullTicket movedTicket, FullTicket afterThisOne) throws TicketNotFoundException {
 
-            afterThisOne.setNextId(movedTicket.getId());
-            this.ticketRepository.save(afterThisOne);
+        movedTicket.setStatus(afterThisOne.getStatus());
+
+        if (movedTicket.getId().equals(afterThisOne.getId())) {
+            return;
         }
 
-        if (moveRequest.getBeforeThisOne() != null) {
-
-            FullTicket beforeThisOne = findById(moveRequest.getBeforeThisOne().getId());
-            if (movedTicket.getId().equals(beforeThisOne.getId())) {
-                return;
-            }
-            FullTicket leftOfBeforeThisOne = findByNextId(beforeThisOne.getId());
-            if (leftOfBeforeThisOne != null) {
-                leftOfBeforeThisOne.setNextId(movedTicket.getId());
-                this.ticketRepository.save(leftOfBeforeThisOne);
-            }
-
-            FullTicket leftOfThisOne = findByNextId(movedTicket.getId());
-            if (leftOfThisOne != null) {
-                leftOfThisOne.setNextId(movedTicket.getNextId());
-                this.ticketRepository.save(leftOfThisOne);
-            }
-            movedTicket.setNextId(beforeThisOne.getId());
-            this.ticketRepository.save(movedTicket);
+        FullTicket leftNeighbor = findByNextId(movedTicket.getId());
+        if (leftNeighbor != null) {
+            leftNeighbor.setNextId(movedTicket.getNextId());
+            this.ticketRepository.save(leftNeighbor);
         }
+        movedTicket.setNextId(afterThisOne.getNextId());
+        this.ticketRepository.save(movedTicket);
+
+        afterThisOne.setNextId(movedTicket.getId());
+        this.ticketRepository.save(afterThisOne);
+    }
+
+    private List<FullTicket> sorted(TicketStatus ticketStatus, List<FullTicket> all) {
+        Optional<FullTicket> root = all
+                .stream()
+                .filter(ticket -> (ticket.getIsRoot() && ticket.getStatus().equals(ticketStatus))).findFirst();
+
+        if (root.isEmpty()) {
+            throw new IllegalStateException("No root with status" + ticketStatus + " found");
+        }
+
+        Map<String, FullTicket> map = all
+                .stream()
+                .collect(Collectors.toMap(FullTicket::getId, ticket -> ticket)
+                );
+
+        var results = new ArrayList<FullTicket>();
+        FullTicket current = root.get();
+        while (current != null) {
+            results.add(current);
+            current = map.get(current.getNextId());
+        }
+        return results;
     }
 }
